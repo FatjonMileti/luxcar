@@ -1,0 +1,113 @@
+:root {
+  --red: #d9261c;
+  --red-dark: #a81a12;
+  --dark: #111114;
+  --dark2: #1b1b1f;
+  --gray: #f4f4f5;
+  --muted: #777;
+  --white: #fff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: 'Segoe UI', Roboto, Arial, sans-serif; background: #fff; color: #222; }
+a { text-decoration: none; color: inherit; }
+
+/* TOP BAR */
+.topbar { background: var(--dark); color: #bbb; font-size: 13px; padding: 8px 0; }
+.topbar .wrap { max-width: 1200px; margin: auto; display: flex; justify-content: space-between; padding: 0 20px; }
+.topbar span { margin-right: 18px; }
+
+/* NAVBAR */
+.navbar { background: #0c0c0e; color: #fff; position: sticky; top: 0; z-index: 50; border-bottom: 3px solid var(--red); }
+.navbar .wrap { max-width: 1200px; margin: auto; display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; }
+.logo { font-weight: 900; font-size: 26px; letter-spacing: 1px; }
+.logo b { color: var(--red); }
+.nav-links { display: flex; gap: 22px; font-size: 14px; font-weight: 600; text-transform: uppercase; }
+.nav-links a.active, .nav-links a:hover { color: var(--red); }
+.nav-phone { background: var(--red); color: #fff; padding: 10px 18px; border-radius: 4px; font-weight: 700; }
+.mobile-toggle { display: none; background: none; border: 1px solid #444; color: #fff; padding: 8px 12px; border-radius: 4px; }
+
+/* HERO — like luxcar.al */
+.hero { background: radial-gradient(ellipse at center, #2a2a30 0%, #0c0c0e 70%), #0c0c0e; color: #fff; padding: 40px 0 0; overflow: hidden; }
+.hero .wrap { max-width: 1200px; margin: auto; padding: 0 20px; display: grid; grid-template-columns: 1fr; gap: 20px; text-align: center; }
+.hero h1 { font-size: 42px; margin: 10px 0; }
+.hero h1 span { color: var(--red); }
+.hero p { color: #bbb; }
+.hero-car { width: 100%; max-width: 900px; margin: 10px auto -40px; display: block; border-radius: 12px; }
+.search-box { background: #fff; color: #222; border-radius: 8px; padding: 20px; max-width: 1200px; margin: 20px auto; box-shadow: 0 10px 40px rgba(0,0,0,.35); }
+.search-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.search-grid select, .search-grid input { width: 100%; padding: 11px; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; }
+.search-actions { display: flex; gap: 12px; margin-top: 14px; align-items: center; }
+.btn-red { background: var(--red); color: #fff; border: none; padding: 13px 28px; border-radius: 4px; font-weight: 800; text-transform: uppercase; cursor: pointer; }
+.btn-red:hover { background: var(--red-dark); }
+.btn-dark { background: var(--dark); color: #fff; border: none; padding: 13px 24px; border-radius: 4px; font-weight: 700; cursor: pointer; }
+.btn-outline { background: #fff; border: 1px solid #ddd; padding: 12px 20px; border-radius: 4px; cursor: pointer; }
+
+/* SECTIONS */
+.section { padding: 60px 20px; }
+.wrap { max-width: 1200px; margin: auto; }
+.section-title { text-align: center; margin-bottom: 36px; }
+.section-title small { color: var(--red); font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+.section-title h2 { font-size: 34px; margin: 8px 0; }
+.steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.step-card { background: var(--gray); border-radius: 8px; padding: 26px 20px; text-align: center; border-top: 4px solid var(--red); }
+.step-card .num { width: 52px; height: 52px; background: var(--dark); color: #fff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 900; font-size: 20px; margin-bottom: 12px; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; }
+.split img { width: 100%; border-radius: 10px; }
+.check li { margin: 10px 0; list-style: none; }
+.check { padding: 0; }
+.check li::before { content: '✔ '; color: var(--red); font-weight: 900; }
+
+/* CARS */
+.cars-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.car-card { border: 1px solid #eee; border-radius: 10px; overflow: hidden; background: #fff; transition: .2s; display: flex; flex-direction: column; }
+.car-card:hover { box-shadow: 0 12px 30px rgba(0,0,0,.12); transform: translateY(-3px); }
+.car-card img { width: 100%; height: 210px; object-fit: cover; background: #ddd; }
+.car-body { padding: 16px; flex: 1; }
+.car-body h3 { margin: 0 0 6px; font-size: 19px; }
+.car-price { color: var(--red); font-weight: 900; font-size: 22px; }
+.car-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; font-size: 13px; color: #555; }
+.car-meta span { background: var(--gray); padding: 5px 10px; border-radius: 20px; }
+.badge { display: inline-block; font-size: 12px; font-weight: 800; padding: 4px 10px; border-radius: 4px; margin-bottom: 8px; }
+.badge.stock { background: #e7f7e7; color: #1c7a1c; }
+.badge.road { background: #fff3cd; color: #856404; }
+.badge.sold { background: #fde2e2; color: #a81a12; }
+
+/* INVENTORY LAYOUT */
+.inventory { display: grid; grid-template-columns: 280px 1fr; gap: 26px; align-items: start; }
+.sidebar { background: #fafafa; border: 1px solid #eee; border-radius: 8px; padding: 18px; position: sticky; top: 90px; }
+.sidebar h4 { margin-top: 0; }
+.sidebar label { font-size: 13px; font-weight: 700; display: block; margin: 12px 0 4px; }
+.sidebar select, .sidebar input { width: 100%; padding: 9px; border: 1px solid #ddd; border-radius: 4px; }
+
+/* FORMS */
+.form-grid { display: grid; gap: 12px; }
+.form-grid input, .form-grid textarea, .form-grid select { padding: 12px; border: 1px solid #ddd; border-radius: 4px; width: 100%; }
+
+/* FOOTER */
+.cta { background: var(--red); color: #fff; text-align: center; padding: 50px 20px; }
+.cta h2 { margin: 0 0 12px; font-size: 30px; }
+.footer { background: #0c0c0e; color: #bbb; padding: 50px 20px 20px; }
+.footer .cols { max-width: 1200px; margin: auto; display: grid; grid-template-columns: 1.2fr 1fr 1fr; gap: 30px; }
+.footer h4 { color: #fff; }
+.copy { text-align: center; border-top: 1px solid #222; margin-top: 30px; padding-top: 16px; font-size: 13px; }
+
+/* DETAIL */
+.detail-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 30px; }
+.detail-grid img.main { width: 100%; border-radius: 10px; }
+.spec-table { width: 100%; border-collapse: collapse; }
+.spec-table td { padding: 10px 12px; border-bottom: 1px solid #eee; font-size: 14px; }
+.spec-table td:first-child { font-weight: 700; color: #555; width: 40%; }
+
+/* ADMIN */
+.table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.table th, .table td { border: 1px solid #eee; padding: 8px 10px; text-align: left; }
+.table th { background: var(--dark); color: #fff; }
+
+@media (max-width: 900px) {
+  .search-grid { grid-template-columns: repeat(2, 1fr); }
+  .steps, .cars-grid, .split, .inventory, .detail-grid, .footer .cols { grid-template-columns: 1fr; }
+  .nav-links { display: none; flex-direction: column; background: #111; position: absolute; top: 62px; left: 0; right: 0; padding: 16px 20px; }
+  .nav-links.open { display: flex; }
+  .mobile-toggle { display: block; }
+  .sidebar { position: static; }
+}

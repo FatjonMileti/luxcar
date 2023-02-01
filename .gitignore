@@ -6,8 +6,11 @@ server/node_modules/
 # Build outputs
 client/dist/
 client/build/
+server/dist/
+admin-api/dist/
 dist/
 build/
+*.tsbuildinfo
 
 # Env files
 .env
@@ -15,6 +18,15 @@ build/
 .env.*.local
 server/.env
 client/.env
+admin-api/.env
+
+# Python (FastAPI admin-api)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
 
 # Logs
 logs/

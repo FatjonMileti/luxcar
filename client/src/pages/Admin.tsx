@@ -1,17 +1,25 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { formatPrice, type Car, type CarInput } from '../api';
 import {
-  fetchCars,
-  createCar,
-  updateCar,
-  deleteCar,
-  fetchInquiries,
-  formatPrice,
-  type Car,
-  type CarInput,
-  type Inquiry,
-} from '../api';
+  adminLogin,
+  adminLogout,
+  adminMe,
+  adminApiError,
+  createAdminCar,
+  deleteAdminCar,
+  deleteAdminInquiry,
+  fetchAdminCars,
+  fetchAdminInquiries,
+  fetchAdminStats,
+  getAdminToken,
+  updateAdminCar,
+  updateInquiryStatus,
+  type AdminInquiry,
+  type AdminMe,
+  type AdminStats,
+} from '../adminApi';
 
-const empty: CarInput = {
+const emptyCar: CarInput = {
   brand: '',
   model: '',
   year: 2021,
@@ -29,24 +37,168 @@ const empty: CarInput = {
   status: 'In Stock',
 };
 
+type Tab = 'dashboard' | 'cars' | 'inquiries';
+
 export default function Admin(): JSX.Element {
+  const [me, setMe] = useState<AdminMe | null>(null);
+  const [authChecked, setAuthChecked] = useState<boolean>(false);
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
+  const [loginError, setLoginError] = useState<string>('');
+  const [tab, setTab] = useState<Tab>('dashboard');
+
+  useEffect(() => {
+    if (!getAdminToken()) {
+      setAuthChecked(true);
+      return;
+    }
+    adminMe()
+      .then(setMe)
+      .catch(() => adminLogout())
+      .finally(() => setAuthChecked(true));
+  }, []);
+
+  const doLogin = async (e: FormEvent): Promise<void> => {
+    e.preventDefault();
+    setLoginError('');
+    try {
+      await adminLogin(email, password);
+      setMe(await adminMe());
+      setPassword('');
+    } catch (err) {
+      setLoginError(adminApiError(err));
+    }
+  };
+
+  const doLogout = (): void => {
+    adminLogout();
+    setMe(null);
+  };
+
+  if (!authChecked) return <div className="section wrap">Duke ngarkuar…</div>;
+
+  if (!me) {
+    return (
+      <div className="section wrap" style={{ maxWidth: 440 }}>
+        <small style={{ color: '#d9261c', fontWeight: 800 }}>ADMIN</small>
+        <h1>Admin Login</h1>
+        <p style={{ color: '#555' }}>
+          Sign in with your admin account to manage cars and inquiries. (FastAPI backend)
+        </p>
+        <form
+          className="form-grid"
+          onSubmit={doLogin}
+          style={{ background: '#fafafa', padding: 20, borderRadius: 8 }}
+        >
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <button className="btn-red" type="submit">
+            Login
+          </button>
+          {loginError && <p style={{ color: '#a81a12' }}>{loginError}</p>}
+        </form>
+      </div>
+    );
+  }
+
+  return (
+    <div className="section wrap">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <small style={{ color: '#d9261c', fontWeight: 800 }}>ADMIN CONSOLE</small>
+          <h1 style={{ margin: '4px 0' }}>Mirësevini, {me.email}</h1>
+        </div>
+        <button className="btn-dark" onClick={doLogout}>
+          Logout
+        </button>
+      </div>
+      <div style={{ display: 'flex', gap: 8, margin: '16px 0 24px' }}>
+        {(['dashboard', 'cars', 'inquiries'] as Tab[]).map((t) => (
+          <button
+            key={t}
+            className={tab === t ? 'btn-red' : 'btn-outline'}
+            style={{ textTransform: 'capitalize' }}
+            onClick={() => setTab(t)}
+          >
+            {t === 'dashboard' ? 'Dashboard' : t === 'cars' ? 'Makinat' : 'Kërkesat'}
+          </button>
+        ))}
+      </div>
+      {tab === 'dashboard' && <Dashboard />}
+      {tab === 'cars' && <CarsManager />}
+      {tab === 'inquiries' && <InquiriesManager />}
+    </div>
+  );
+}
+
+function Dashboard(): JSX.Element {
+  const [stats, setStats] = useState<AdminStats | null>(null);
+  const [error, setError] = useState<string>('');
+
+  useEffect(() => {
+    fetchAdminStats().then(setStats).catch((err) => setError(adminApiError(err)));
+  }, []);
+
+  if (error) return <p style={{ color: '#a81a12' }}>{error}</p>;
+  if (!stats) return <p>Duke ngarkuar statistikat…</p>;
+
+  const cards: [string, string][] = [
+    ['Total cars', String(stats.totalCars)],
+    ['In stock', String(stats.inStock)],
+    ['In transit', String(stats.inTransit)],
+    ['Sold', String(stats.sold)],
+    ['Featured', String(stats.featured)],
+    ['Total inquiries', String(stats.totalInquiries)],
+    ['New inquiries', String(stats.newInquiries)],
+    ['Stock value', formatPrice(stats.totalStockValue)],
+  ];
+
+  return (
+    <div className="steps" style={{ gridTemplateColumns: 'repeat(4,1fr)' }}>
+      {cards.map(([label, value]) => (
+        <div key={label} className="step-card">
+          <div style={{ fontSize: 28, fontWeight: 900 }}>{value}</div>
+          <p style={{ color: '#555', margin: '6px 0 0' }}>{label}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CarsManager(): JSX.Element {
   const [cars, setCars] = useState<Car[]>([]);
-  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
-  const [form, setForm] = useState<CarInput>(empty);
+  const [total, setTotal] = useState<number>(0);
+  const [search, setSearch] = useState<string>('');
+  const [status, setStatus] = useState<string>('');
+  const [form, setForm] = useState<CarInput>(emptyCar);
   const [editing, setEditing] = useState<string | null>(null);
+  const [error, setError] = useState<string>('');
 
   const load = async (): Promise<void> => {
-    const d = await fetchCars({ limit: 50 });
-    setCars(d.cars);
     try {
-      setInquiries(await fetchInquiries());
-    } catch {
-      /* ignore if empty */
+      const d = await fetchAdminCars({ search, status, limit: 50 });
+      setCars(d.cars);
+      setTotal(d.total);
+    } catch (err) {
+      setError(adminApiError(err));
     }
   };
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const set = <K extends keyof CarInput>(k: K, v: CarInput[K]): void =>
@@ -54,17 +206,23 @@ export default function Admin(): JSX.Element {
 
   const submit = async (e: FormEvent): Promise<void> => {
     e.preventDefault();
-    const payload: CarInput = {
-      ...form,
-      year: Number(form.year),
-      price: Number(form.price),
-      mileage: Number(form.mileage),
-    };
-    if (editing) await updateCar(editing, payload);
-    else await createCar(payload);
-    setForm(empty);
-    setEditing(null);
-    load();
+    setError('');
+    try {
+      const payload: CarInput = {
+        ...form,
+        year: Number(form.year),
+        price: Number(form.price),
+        mileage: Number(form.mileage),
+      };
+      if (editing) await updateAdminCar(editing, payload);
+      else await createAdminCar(payload);
+      setForm(emptyCar);
+      setEditing(null);
+      await load();
+      window.scrollTo(0, 0);
+    } catch (err) {
+      setError(adminApiError(err));
+    }
   };
 
   const edit = (c: Car): void => {
@@ -78,15 +236,22 @@ export default function Admin(): JSX.Element {
   };
 
   const remove = async (id: string): Promise<void> => {
-    if (confirm('Fshi makinën?')) {
-      await deleteCar(id);
-      load();
+    if (!confirm('Fshi makinën?')) return;
+    try {
+      await deleteAdminCar(id);
+      await load();
+    } catch (err) {
+      setError(adminApiError(err));
     }
   };
 
+  const applyFilters = async (e: FormEvent): Promise<void> => {
+    e.preventDefault();
+    await load();
+  };
+
   return (
-    <div className="section wrap">
-      <h1>Admin — Menaxho Makinat</h1>
+    <div>
       <form
         onSubmit={submit}
         style={{ background: '#fafafa', padding: 18, borderRadius: 8, marginBottom: 24 }}
@@ -94,34 +259,34 @@ export default function Admin(): JSX.Element {
         <h3 style={{ marginTop: 0 }}>{editing ? 'Përditëso makinën' : 'Shto makinë të re'}</h3>
         <div className="search-grid">
           <input
-            placeholder="Marka*"
+            placeholder="Brand*"
             value={form.brand}
             onChange={(e) => set('brand', e.target.value)}
             required
           />
           <input
-            placeholder="Modeli*"
+            placeholder="Model*"
             value={form.model}
             onChange={(e) => set('model', e.target.value)}
             required
           />
           <input
             type="number"
-            placeholder="Viti*"
+            placeholder="Year*"
             value={form.year}
             onChange={(e) => set('year', Number(e.target.value))}
             required
           />
           <input
             type="number"
-            placeholder="Çmimi €*"
+            placeholder="Price €*"
             value={form.price}
             onChange={(e) => set('price', Number(e.target.value))}
             required
           />
           <input
             type="number"
-            placeholder="Km*"
+            placeholder="Mileage km*"
             value={form.mileage}
             onChange={(e) => set('mileage', Number(e.target.value))}
             required
@@ -139,13 +304,13 @@ export default function Admin(): JSX.Element {
             <option>Manual</option>
           </select>
           <input
-            placeholder="Motori*"
+            placeholder="Engine*"
             value={form.engine}
             onChange={(e) => set('engine', e.target.value)}
             required
           />
           <input
-            placeholder="Ngjyra"
+            placeholder="Color"
             value={form.color}
             onChange={(e) => set('color', e.target.value)}
           />
@@ -167,7 +332,7 @@ export default function Admin(): JSX.Element {
               checked={form.inspected}
               onChange={(e) => set('inspected', e.target.checked)}
             />{' '}
-            Inspektuar
+            Inspected
           </label>
           <label>
             <input
@@ -178,7 +343,7 @@ export default function Admin(): JSX.Element {
             Featured
           </label>
           <input
-            placeholder="Përshkrimi"
+            placeholder="Description"
             value={form.description}
             onChange={(e) => set('description', e.target.value)}
             style={{ gridColumn: 'span 2' }}
@@ -194,25 +359,49 @@ export default function Admin(): JSX.Element {
               className="btn-outline"
               onClick={() => {
                 setEditing(null);
-                setForm(empty);
+                setForm(emptyCar);
               }}
             >
               Anulo
             </button>
           )}
         </div>
+        {error && <p style={{ color: '#a81a12' }}>{error}</p>}
       </form>
 
-      <h3>Inventari ({cars.length})</h3>
+      <form onSubmit={applyFilters} style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+        <input
+          placeholder="Search brand / model…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          style={{ flex: 1, padding: 10, border: '1px solid #ddd', borderRadius: 4 }}
+        />
+        <select
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+          style={{ padding: 10 }}
+        >
+          <option value="">All statuses</option>
+          <option>In Stock</option>
+          <option>In Transit</option>
+          <option>Sold</option>
+          <option>On Order</option>
+        </select>
+        <button className="btn-dark" type="submit">
+          Filter
+        </button>
+      </form>
+
+      <h3>Inventory ({total})</h3>
       <div style={{ overflowX: 'auto' }}>
         <table className="table">
           <thead>
             <tr>
-              <th>Makina</th>
-              <th>Viti</th>
-              <th>Çmimi</th>
+              <th>Car</th>
+              <th>Year</th>
+              <th>Price</th>
               <th>Status</th>
-              <th>Veprime</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -237,7 +426,7 @@ export default function Admin(): JSX.Element {
                     style={{ padding: '4px 10px' }}
                     onClick={() => remove(c._id)}
                   >
-                    Fshi
+                    Delete
                   </button>
                 </td>
               </tr>
@@ -245,29 +434,105 @@ export default function Admin(): JSX.Element {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
 
-      <h3 style={{ marginTop: 30 }}>Kërkesat / Mesazhet ({inquiries.length})</h3>
+function InquiriesManager(): JSX.Element {
+  const [items, setItems] = useState<AdminInquiry[]>([]);
+  const [status, setStatus] = useState<string>('');
+  const [error, setError] = useState<string>('');
+
+  const load = async (s = status): Promise<void> => {
+    try {
+      setItems(await fetchAdminInquiries(s || undefined));
+    } catch (err) {
+      setError(adminApiError(err));
+    }
+  };
+
+  useEffect(() => {
+    load('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const changeStatus = async (id: string, s: AdminInquiry['status']): Promise<void> => {
+    try {
+      await updateInquiryStatus(id, s);
+      await load();
+    } catch (err) {
+      setError(adminApiError(err));
+    }
+  };
+
+  const remove = async (id: string): Promise<void> => {
+    if (!confirm('Delete this inquiry?')) return;
+    try {
+      await deleteAdminInquiry(id);
+      await load();
+    } catch (err) {
+      setError(adminApiError(err));
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+        {['', 'New', 'Read', 'Closed'].map((s) => (
+          <button
+            key={s || 'all'}
+            className={status === s ? 'btn-red' : 'btn-outline'}
+            onClick={() => {
+              setStatus(s);
+              load(s);
+            }}
+          >
+            {s || 'All'}
+          </button>
+        ))}
+      </div>
+      {error && <p style={{ color: '#a81a12' }}>{error}</p>}
+      <h3>Inquiries ({items.length})</h3>
       <div style={{ overflowX: 'auto' }}>
         <table className="table">
           <thead>
             <tr>
-              <th>Emri</th>
-              <th>Telefoni</th>
-              <th>Makina</th>
-              <th>Mesazhi</th>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Car</th>
+              <th>Message</th>
+              <th>Status</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {inquiries.map((i: Inquiry) => (
+            {items.map((i: AdminInquiry) => (
               <tr key={i._id}>
                 <td>{i.name}</td>
                 <td>{i.phone}</td>
-                <td>
-                  {typeof i.car === 'object' && i.car !== null
-                    ? `${(i.car as Car).brand} ${(i.car as Car).model}`
-                    : '—'}
-                </td>
+                <td>{i.carLabel || '—'}</td>
                 <td>{i.message}</td>
+                <td>
+                  <select
+                    value={i.status}
+                    onChange={(e) =>
+                      changeStatus(i._id, e.target.value as AdminInquiry['status'])
+                    }
+                  >
+                    <option>New</option>
+                    <option>Read</option>
+                    <option>Closed</option>
+                  </select>
+                </td>
+                <td>
+                  <button
+                    className="btn-outline"
+                    style={{ padding: '4px 10px' }}
+                    onClick={() => remove(i._id)}
+                  >
+                    Delete
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

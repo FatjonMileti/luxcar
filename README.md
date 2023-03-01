@@ -1,8 +1,8 @@
-# LuxCar Albania — MERN Car Sales App (TypeScript)
+# LuxCar Albania — Car Sales App (MERN + FastAPI)
 
-A full-stack MERN application for selling cars, inspired by https://luxcar.al/ — a car importer from South Korea to Albania and the Balkans.
+A full-stack car sales application. https://luxcar.al/ — a car importer from South Korea to Albania and the Balkans.
 
-Both the backend and frontend are written in **TypeScript** and configured entirely through **environment variables** (no hardcoded URLs, ports, or secrets).
+The public site and API use the **MERN** stack (MongoDB, Express, React, Node.js with TypeScript), while the admin side pairs a **React** console with a **FastAPI** (Python) service sharing the same database. Everything is configured through **environment variables** (no hardcoded URLs, ports, or secrets).
 
 ## Tech Stack
 

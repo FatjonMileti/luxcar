@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { config } from './config';
+import { connectMongo } from './mongo';
 import { Car } from './models/Car';
 
 const cars = [
@@ -63,7 +64,7 @@ const cars = [
 
 async function seed(): Promise<void> {
   const uri: string = config.mongoUri;
-  await mongoose.connect(uri);
+  await connectMongo(uri);
   console.log('Connected:', uri);
   await Car.deleteMany({});
   await Car.insertMany(cars);

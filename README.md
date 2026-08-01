@@ -65,9 +65,10 @@ PORT=5000
 MONGO_URI=mongodb://127.0.0.1:27017/luxcar
 CLIENT_URL=http://localhost:5173
 NODE_ENV=development
+CACHE_TTL_MS=60000
 ```
 
-All variables are loaded and validated in `server/src/config.ts`. `MONGO_URI` is required (falls back to local MongoDB).
+All variables are loaded and validated in `server/src/config.ts`. `MONGO_URI` is required (falls back to local MongoDB). `CACHE_TTL_MS` controls the public GET response cache TTL.
 
 ### Frontend (`client/.env`)
 
@@ -188,6 +189,8 @@ The Vite dev server proxies `/api` to `VITE_BACKEND_URL`, so no CORS setup is ne
 | DELETE | `/api/inquiries/:id`   | Delete an inquiry                        |
 
 Filter query params: `brand, model, year, yearMin, yearMax, fuel, transmission, engine, inspected, priceMin, priceMax, mileageMax, search, sort, order, featured, status, page, limit`.
+
+Public `GET` responses are cached in memory with [`http-cache-lite`](https://www.npmjs.com/package/http-cache-lite) (TTL via `CACHE_TTL_MS`, `X-Cache: HIT/MISS` headers, ETag/`304` support). Any `POST`/`PUT`/`DELETE` automatically invalidates the affected tag, so listings are never stale. MongoDB connects use [`node-retry-kit`](https://www.npmjs.com/package/node-retry-kit) with exponential backoff so the API survives boot ordering (DB not reachable yet).
 
 ### Admin API (FastAPI, port 8000) — all `/admin/*` routes require `Authorization: Bearer <JWT>`
 

@@ -1,7 +1,7 @@
 import express from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 import { config } from './config';
+import { connectMongo } from './mongo';
 import carsRouter from './routes/cars';
 import inquiriesRouter from './routes/inquiries';
 
@@ -13,8 +13,7 @@ app.get('/api/health', (_req, res) => res.json({ ok: true, app: 'LuxCar MERN' })
 app.use('/api/cars', carsRouter);
 app.use('/api/inquiries', inquiriesRouter);
 
-mongoose
-  .connect(config.mongoUri)
+connectMongo(config.mongoUri)
   .then(() => {
     console.log('MongoDB connected');
     app.listen(config.port, () =>

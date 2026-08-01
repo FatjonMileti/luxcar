@@ -1,13 +1,17 @@
 import { Router, Request, Response } from 'express';
+import { cacheMiddleware } from 'http-cache-lite';
 import { Car } from '../models/Car';
+import { CARS_TAG, httpCache, invalidateCars } from '../cache';
 
 const router = Router();
+
+const cacheCars = cacheMiddleware({ cache: httpCache, tags: [CARS_TAG], cacheControl: true });
 
 // GET /api/cars — list with filters like luxcar.al
 // query: brand, model, year, yearMin, yearMax, fuel, transmission, engine,
 //        inspected(true/false), priceMin, priceMax, mileageMax, search,
 //        sort(name|price|date|year), order(asc|desc), featured, status, limit, page
-router.get('/', async (req: Request, res: Response): Promise<void> => {
+router.get('/', cacheCars, async (req: Request, res: Response): Promise<void> => {
   try {
     const {
       brand,
@@ -80,7 +84,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 });
 
 // GET distinct filter values for the search bar
-router.get('/filters', async (_req: Request, res: Response): Promise<void> => {
+router.get('/filters', cacheCars, async (_req: Request, res: Response): Promise<void> => {
   try {
     const [brands, models, years, fuels, transmissions, engines] = await Promise.all([
       Car.distinct('brand'),
@@ -109,7 +113,7 @@ router.get('/filters', async (_req: Request, res: Response): Promise<void> => {
   }
 });
 
-router.get('/:id', async (req: Request, res: Response): Promise<void> => {
+router.get('/:id', cacheCars, async (req: Request, res: Response): Promise<void> => {
   try {
     const car = await Car.findById(req.params.id);
     if (!car) {
@@ -126,6 +130,7 @@ router.get('/:id', async (req: Request, res: Response): Promise<void> => {
 router.post('/', async (req: Request, res: Response): Promise<void> => {
   try {
     const car = await Car.create(req.body);
+    await invalidateCars();
     res.status(201).json(car);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -143,6 +148,7 @@ router.put('/:id', async (req: Request, res: Response): Promise<void> => {
       res.status(404).json({ message: 'Car not found' });
       return;
     }
+    await invalidateCars();
     res.json(car);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -157,6 +163,7 @@ router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
       res.status(404).json({ message: 'Car not found' });
       return;
     }
+    await invalidateCars();
     res.json({ message: 'Car deleted' });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';

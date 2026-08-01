@@ -15,4 +15,5 @@ export const config = {
   mongoUri: requireEnv('MONGO_URI', 'mongodb://127.0.0.1:27017/luxcar'),
   clientUrl: process.env.CLIENT_URL ?? 'http://localhost:5173',
   nodeEnv: process.env.NODE_ENV ?? 'development',
+  cacheTtlMs: Number(process.env.CACHE_TTL_MS ?? 60000),
 } as const;

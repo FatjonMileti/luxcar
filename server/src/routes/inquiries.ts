@@ -1,9 +1,17 @@
 import { Router, Request, Response } from 'express';
+import { cacheMiddleware } from 'http-cache-lite';
 import { Inquiry } from '../models/Inquiry';
+import { INQUIRIES_TAG, httpCache, invalidateInquiries } from '../cache';
 
 const router = Router();
 
-router.get('/', async (_req: Request, res: Response): Promise<void> => {
+const cacheInquiries = cacheMiddleware({
+  cache: httpCache,
+  tags: [INQUIRIES_TAG],
+  cacheControl: true,
+});
+
+router.get('/', cacheInquiries, async (_req: Request, res: Response): Promise<void> => {
   const items = await Inquiry.find()
     .sort({ createdAt: -1 })
     .populate('car', 'brand model year price');
@@ -24,6 +32,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       return;
     }
     const item = await Inquiry.create({ name, phone, email, message, car: car || null });
+    await invalidateInquiries();
     res.status(201).json(item);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
@@ -33,6 +42,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 
 router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
   await Inquiry.findByIdAndDelete(req.params.id);
+  await invalidateInquiries();
   res.json({ message: 'Deleted' });
 });
 
